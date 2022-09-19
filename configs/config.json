@@ -9,7 +9,7 @@
         "buyPauseDuration": 29000,
         "sellPauseDuration": 28000,
         "borrowRepaySplitMinute": 29,
-        "statInterval": 6000,
+        "statInterval": 60000,
         "baseToken": {
             "name": "ETH",
             "onHand": 1,
