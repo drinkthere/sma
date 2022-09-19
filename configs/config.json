@@ -3,23 +3,23 @@
         "manageMarginAccountInterval": 30000,
         "smaLength": 200,
         "smaInterval": 1000,
-        "smaMargin": 1.003,
+        "smaMargin": 1.004,
         "reduceMargin": 1.002,
-        "orderSize": 0.01,
+        "orderSize": 0.1,
         "buyPauseDuration": 29000,
         "sellPauseDuration": 28000,
         "borrowRepaySplitMinute": 29,
-        "statInterval": 60000,
+        "statInterval": 300000,
         "baseToken": {
             "name": "ETH",
             "onHand": 1,
             "reduce": 2,
-            "amountPerBorrow": 0.03
+            "amountPerBorrow": 0.3
         },
         "quoteToken": {
             "name": "BUSD",
             "onHand": 1500,
-            "amountPerBorrow": 50
+            "amountPerBorrow": 450
         },
         "bnb": {
             "onHand": 0.5,
