@@ -12,8 +12,8 @@ node_modules/
 /logs
 *.log
 
-# configs
-configs/config.json
+# # configs
+# configs/config.json
 
 # vscode
 .vscode/*

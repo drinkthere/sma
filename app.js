@@ -6,6 +6,7 @@ const Binance = require("node-binance-api");
 const { newInterval, wait } = require("./utils/run");
 const uuidv1 = require("uuidv1");
 const timer = require("performance-now");
+const TelegramBot = require("node-telegram-bot-api");
 
 // 加载.env文件
 const dotenv = require("dotenv");
@@ -20,10 +21,14 @@ const binance = new Binance().options({
     recvWindow: 10000,
 });
 
+const teleBot = new TelegramBot(process.env.TELEGRAM_TOKEN);
+const channelId = process.env.TELEGRAM_CHANNEL_ID;
+
 const baseToken = {
     name: currConfig.baseToken.name,
     onHand: currConfig.baseToken.onHand,
     reduce: currConfig.baseToken.reduce,
+    amountPerBorrow: currConfig.baseToken.amountPerBorrow,
     free: 0,
     borrowed: 0,
     netAsset: 0,
@@ -31,14 +36,20 @@ const baseToken = {
 const quoteToken = {
     name: currConfig.quoteToken.name,
     onHand: currConfig.quoteToken.onHand,
+    amountPerBorrow: currConfig.quoteToken.amountPerBorrow,
     free: 0,
     borrowed: 0,
     netAsset: 0,
 };
 
 const bnb = {
+    onHand: currConfig.bnb.onHand,
+    free: 0,
     borrowed: 0,
     interest: 0,
+    netAsset: 0,
+    repayThreshold: currConfig.bnb.repayThreshold,
+    bid: 0,
 };
 
 const manageMarginAccountInterval = currConfig.manageMarginAccountInterval;
@@ -49,7 +60,8 @@ const reduceMargin = currConfig.reduceMargin;
 const orderSize = currConfig.orderSize;
 const buyPauseDuration = currConfig.buyPauseDuration;
 const sellPauseDuration = currConfig.sellPauseDuration;
-
+const borrowRepaySplitMinute = currConfig.borrowRepaySplitMinute;
+const statInterval = currConfig.statInterval;
 let bid;
 let ask;
 let smaArr = [];
@@ -86,14 +98,16 @@ const getBalances = async () => {
                         quoteToken.borrowed = parseFloat(assetInfo.borrowed);
                         quoteToken.netAsset = parseFloat(assetInfo.netAsset);
                     } else if ("BNB" == assetInfo.asset) {
+                        bnb.free = parseFloat(assetInfo.borrowed);
                         bnb.borrowed = parseFloat(assetInfo.borrowed);
                         bnb.interest = parseFloat(assetInfo.interest);
+                        bnb.netAsset = parseFloat(assetInfo.netAsset);
                     }
                 });
-                console.log(baseToken, quoteToken, bnb);
+                // console.log(baseToken, quoteToken, bnb);
             } catch (err) {
                 console.log(err);
-                // @todo 添加报警
+                teleBot.sendMessage(channelId, err.message);
                 reject();
             }
             resolve();
@@ -112,24 +126,23 @@ const borrowRepay = async () => {
     try {
         const currMinute = new Date().getMinutes();
 
-        if (currMinute <= 58) {
-            if (bnb.borrowed + bnb.interest > 0.1) {
-                const repayBnbAmount = (bnb.borrowed + bnb.interest).toFixed(2);
-                console.log(`Repay BNB ${repayBnbAmount}`);
-                repay("BNB", repayBnbAmount);
-            }
+        if (currMinute <= borrowRepaySplitMinute) {
             console.log("borrow loop");
             if (baseToken.free < baseToken.onHand) {
-                console.log(`Borrow ${baseToken.name} ${baseToken.onHand}`);
-                borrow(baseToken.name, baseToken.onHand);
+                console.log(
+                    `Borrow ${baseToken.name} ${baseToken.amountPerBorrow}`
+                );
+                borrow(baseToken.name, baseToken.amountPerBorrow);
             }
             if (quoteToken.free < quoteToken.onHand) {
-                console.log(`Borrow ${quoteToken.name} ${quoteToken.onHand}`);
-                borrow(quoteToken.name, quoteToken.onHand);
+                console.log(
+                    `Borrow ${quoteToken.name} ${quoteToken.amountPerBorrow}`
+                );
+                borrow(quoteToken.name, quoteToken.amountPerBorrow);
             }
         }
 
-        if (currMinute > 58) {
+        if (currMinute > borrowRepaySplitMinute) {
             console.log("repay loop");
             if (baseToken.free > baseToken.onHand && baseToken.borrowed > 0) {
                 const repayAmount = Math.min(
@@ -150,10 +163,16 @@ const borrowRepay = async () => {
                 console.log(`Repay ${quoteToken.name} ${repayAmount}`);
                 repay(quoteToken.name, repayAmount);
             }
+
+            // 用BNB支付可以节省5%的费用，需要在币安设置一下
+            if (bnb.borrowed + bnb.interest > bnb.repayThreshold) {
+                const repayBnbAmount = (bnb.borrowed + bnb.interest).toFixed(8);
+                console.log(`Repay BNB ${repayBnbAmount}`);
+                repay("BNB", repayBnbAmount);
+            }
         }
     } catch (err) {
         console.error(err);
-        //TODO: handle error
     }
 };
 
@@ -191,7 +210,7 @@ const wsListenOrder = () => {
     try {
         // 监听订单信息
         binance.websockets.userMarginData(
-            false, // balance callback
+            marginBalanceCallback,
             marginExecutionCallback
         );
     } catch (e) {
@@ -199,32 +218,39 @@ const wsListenOrder = () => {
     }
 };
 
+const marginBalanceCallback = (data) => {};
 const marginExecutionCallback = (event) => {
     if (event.e != "executionReport") {
         return;
     }
+    console.log(event);
     if (event.S == "BUY" && event.X == "FILLED") {
-        console.log(
-            `buy order success, clientId=${event.c}, price=${event.p}, amount=${event.q}`
-        );
+        const msg = `buy order success, clientId=${event.c}, price=${event.L}, amount=${event.q}`;
+        console.log(msg);
+        teleBot.sendMessage(channelId, msg);
         // @todo, 存入数据库，看下成单价与 bookticker 的滑点
-    }
-    if (event.S == "SELL" && event.X == "FILLED") {
-        console.log(
-            `sell order success, clientId=${event.c}, price=${event.p}, amount=${event.q}`
-        );
+    } else if (event.S == "SELL" && event.X == "FILLED") {
+        const msg = `sell order success, clientId=${event.c}, price=${event.L}, amount=${event.q}`;
+        console.log(msg);
+        teleBot.sendMessage(channelId, msg);
         // @todo, 存入数据库，看下成单价与 bookticker 的滑点
     }
 };
 
 const wsListenSpotBookTicker = () => {
     try {
+        // 监听BNB现货价格
+        binance.websockets.bookTickers(bnb.symbol, (bookticker) => {
+            bnb.bid = parseFloat(bookticker.bestBid);
+        });
+
         // 监听现货价格
         binance.websockets.bookTickers(symbol, (bookticker) => {
             bid = parseFloat(bookticker.bestBid);
             ask = parseFloat(bookticker.bestAsk);
             // 价格更新超过1s，不交易，避免亏损
-            atRisk = Date.now - bookticker.timestamp > 1000 ? false : true;
+
+            atRisk = Date.now() - bookticker.timestamp > 1000 ? true : false;
             trade();
         });
     } catch (e) {
@@ -233,35 +259,66 @@ const wsListenSpotBookTicker = () => {
 };
 
 const trade = async () => {
-    if (ask > smaAvg * smaMargin && !sellPause && !atRisk && ready) {
-        sellPause = true;
+    if (!ready || atRisk) {
+        return;
+    }
 
+    if (ask > smaAvg * smaMargin && !sellPause) {
+        console.log(
+            `===ask=${ask}, smaAvg*smaMargin=${
+                smaAvg * smaMargin
+            }, ask>smaAvg*smaMargin=${
+                ask > smaAvg * smaMargin
+            }, sellPause=${sellPause}`
+        );
+        sellPause = true;
         createOrder("SELL", "MARKET", orderSize);
         sellUnpause();
     } else if (
         ask > smaAvg * reduceMargin &&
         !sellPause &&
-        !atRisk &&
-        ready &&
         baseToken.netAsset > baseToken.reduce
     ) {
+        console.log(
+            `===ask=${ask}, smaAvg*reduceMargin=${
+                smaAvg * reduceMargin
+            }, ask>smaAvg*reduceMargin=${
+                ask > smaAvg * reduceMargin
+            }, netAsset>reduce=${
+                baseToken.netAsset < baseToken.reduce
+            }, sellPause=${sellPause}`
+        );
         sellPause = true;
         createOrder("SELL", "MARKET", orderSize);
         sellUnpause();
     }
-    if (bid < smaAvg / smaMargin && !buyPause && !atRisk && ready) {
+    if (bid < smaAvg / smaMargin && !buyPause) {
+        console.log(
+            `===bid=${bid}, smaAvg/smaMargin=${
+                smaAvg / smaMargin
+            }, bid<smaAvg/smaMargin=${
+                bid < smaAvg / smaMargin
+            }, buyPause=${buyPause}`
+        );
         buyPause = true;
         createOrder("BUY", "MARKET", orderSize);
         buyUnpause();
     } else if (
         bid < smaAvg / reduceMargin &&
         !buyPause &&
-        !atRisk &&
-        ready == true &&
         baseToken.netAsset < baseToken.reduce
     ) {
+        console.log(
+            `===bid=${bid}, smaAvg/reduceMargin=${
+                smaAvg / smaMargin
+            }, bid<smaAvg/reduceMargin=${
+                bid < smaAvg / reduceMargin
+            }, netAsset<reduce=${
+                baseToken.netAsset > baseToken.reduce
+            }, buyPause=${buyPause}`
+        );
         buyPause = true;
-        createOrder("BUY", "MARKET", size);
+        createOrder("BUY", "MARKET", orderSize);
         buyUnpause();
     }
 };
@@ -280,9 +337,8 @@ const createOrder = async (side, type, quantity) => {
     try {
         const start = timer();
         // 市价单，price=0
-        const order = binance.marginOrder(side, symbol, quantity, 0, {
+        const order = binance.mgOrder(side, symbol, quantity, 0, {
             type: "MARKET",
-            isIsolated: "FALSE",
             newClientOrderId: uuidv1(),
         });
         const end = timer();
@@ -307,20 +363,28 @@ const calculateSma = async () => {
     }
 };
 
+const stat = async () => {
+    await getBalances();
+    const baseTokenProfit = (baseToken.netAsset - baseToken.onHand) * bid;
+    const quoteTokenProfit = quoteToken.netAsset - quoteToken.onHand;
+    const bnbProfit = (bnb.netAsset - bnb.onHand) * bnb.bid;
+    const totalProfit = baseTokenProfit + quoteTokenProfit + bnbProfit;
+    const statistic = `Total Profit=${totalProfit}, ${baseToken.name}=${baseToken.netAsset}, ${quoteToken.name}=${quoteToken.netAsset}, BNB=${bnb.netAsset}`;
+    console.log(statistic);
+};
+
 const main = async () => {
     // @todo 增加最大出错次数，超过了停止程序
     await init();
-
     // 杠杆账户管理，借款、还款、还利息
     newInterval(marginAccountManagement, manageMarginAccountInterval);
-
     // 监听成交信息
     wsListenOrder();
-
     // 监听现货价格
     wsListenSpotBookTicker();
-
     // 定时计算 SMA
     newInterval(calculateSma, smaInterval);
+    // 定时上报盈亏
+    newInterval(stat, statInterval);
 };
 main();
