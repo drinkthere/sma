@@ -371,6 +371,7 @@ const stat = async () => {
     const totalProfit = baseTokenProfit + quoteTokenProfit + bnbProfit;
     const statistic = `Total Profit=${totalProfit}, ${baseToken.name}=${baseToken.netAsset}, ${quoteToken.name}=${quoteToken.netAsset}, BNB=${bnb.netAsset}`;
     console.log(statistic);
+    teleBot.sendMessage(channelId, statistic);
 };
 
 const main = async () => {
