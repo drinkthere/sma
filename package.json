@@ -1,9 +1,13 @@
 {
-    "start": "node app.js --symbol=ETHUSDT",
+    "scripts": {
+        "start": "node app.js --symbol=ETHUSDT"
+    },
     "dependencies": {
-      "dotenv": "^16.0.1",
-      "fs": "^0.0.1-security",
-      "node-binance-api": "^0.13.1"
+        "dotenv": "^16.0.1",
+        "fs": "^0.0.1-security",
+        "minimist": "^1.2.6",
+        "node-binance-api": "^0.13.1",
+        "performance-now": "^2.1.0",
+        "uuidv1": "^1.6.14"
     }
-  }
-  
+}
