@@ -8,7 +8,7 @@
         "orderSize": 0.1,
         "buyPauseDuration": 29000,
         "sellPauseDuration": 28000,
-        "borrowRepaySplitMinute": 29,
+        "borrowRepaySplitMinute": 58,
         "statInterval": 300000,
         "baseToken": {
             "name": "ETH",

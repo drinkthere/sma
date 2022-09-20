@@ -9,6 +9,8 @@
         "node-binance-api": "^0.13.1",
         "node-telegram-bot-api": "^0.59.0",
         "performance-now": "^2.1.0",
+        "sqlite": "^4.1.2",
+        "sqlite3": "^5.1.1",
         "uuidv1": "^1.6.14"
     }
 }

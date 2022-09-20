@@ -21,8 +21,13 @@ const binance = new Binance().options({
     recvWindow: 10000,
 });
 
+// 电报相关
 const teleBot = new TelegramBot(process.env.TELEGRAM_TOKEN);
 const channelId = process.env.TELEGRAM_CHANNEL_ID;
+
+// 数据库相关
+const dbFile = __dirname + "/dbs/sma.db";
+let db;
 
 const baseToken = {
     name: currConfig.baseToken.name,
@@ -75,6 +80,9 @@ const init = async () => {
     // 初始化时区
     process.env.TZ = "Asia/Hong_Kong";
 
+    // 初始化数据库
+    await initDb();
+
     // 初始化杠杆账户余额
     await getBalances();
 };
@@ -115,6 +123,17 @@ const getBalances = async () => {
     });
 };
 
+const initDb = async () => {
+    console.log("Start initializing database.");
+    const sqlite3 = require("sqlite3").verbose();
+    const { open } = require("sqlite");
+    db = await open({
+        filename: dbFile,
+        driver: sqlite3.Database,
+    });
+    console.log("Finish initializing database.");
+};
+
 const marginAccountManagement = async () => {
     // 更新余额
     await getBalances();
@@ -128,13 +147,20 @@ const borrowRepay = async () => {
 
         if (currMinute <= borrowRepaySplitMinute) {
             console.log("borrow loop");
-            if (baseToken.free < baseToken.onHand) {
+            // 增加一个限制，最多借一手, 2倍杠杆，
+            if (
+                baseToken.free < baseToken.onHand &&
+                baseToken.borrowed < baseToken.onHand
+            ) {
                 console.log(
                     `Borrow ${baseToken.name} ${baseToken.amountPerBorrow}`
                 );
                 borrow(baseToken.name, baseToken.amountPerBorrow);
             }
-            if (quoteToken.free < quoteToken.onHand) {
+            if (
+                quoteToken.free < quoteToken.onHand &&
+                quoteToken.borrowed < baseToken.onHand
+            ) {
                 console.log(
                     `Borrow ${quoteToken.name} ${quoteToken.amountPerBorrow}`
                 );
@@ -228,13 +254,22 @@ const marginExecutionCallback = (event) => {
         const msg = `buy order success, clientId=${event.c}, price=${event.L}, amount=${event.q}`;
         console.log(msg);
         teleBot.sendMessage(channelId, msg);
-        // @todo, 存入数据库，看下成单价与 bookticker 的滑点
+        await runSql(`INSERT INTO tb_order (symbol, client_id, direction, price, quantity) VALUES ('${symbol}', '${event.c}', 'BUY', ${event.L}, ${event.q})`)
     } else if (event.S == "SELL" && event.X == "FILLED") {
         const msg = `sell order success, clientId=${event.c}, price=${event.L}, amount=${event.q}`;
         console.log(msg);
         teleBot.sendMessage(channelId, msg);
-        // @todo, 存入数据库，看下成单价与 bookticker 的滑点
+        await runSql(`INSERT INTO tb_order (symbol, client_id, direction, price, quantity) VALUES ('${symbol}', '${event.c}', 'BUY', ${event.L}, ${event.q})`)
     }
+};
+
+const runSql = async (sql) => {
+    db.run(sql, (err) => {
+        if (null != err) {
+            console.log(err);
+            process.exit();
+        }
+    });
 };
 
 const wsListenSpotBookTicker = () => {
