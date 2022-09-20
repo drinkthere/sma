@@ -254,12 +254,16 @@ const marginExecutionCallback = (event) => {
         const msg = `buy order success, clientId=${event.c}, price=${event.L}, amount=${event.q}`;
         console.log(msg);
         teleBot.sendMessage(channelId, msg);
-        await runSql(`INSERT INTO tb_order (symbol, client_id, direction, price, quantity) VALUES ('${symbol}', '${event.c}', 'BUY', ${event.L}, ${event.q})`)
+        runSql(
+            `INSERT INTO tb_order (symbol, client_id, direction, price, quantity) VALUES ('${symbol}', '${event.c}', 'BUY', ${event.L}, ${event.q})`
+        );
     } else if (event.S == "SELL" && event.X == "FILLED") {
         const msg = `sell order success, clientId=${event.c}, price=${event.L}, amount=${event.q}`;
         console.log(msg);
         teleBot.sendMessage(channelId, msg);
-        await runSql(`INSERT INTO tb_order (symbol, client_id, direction, price, quantity) VALUES ('${symbol}', '${event.c}', 'BUY', ${event.L}, ${event.q})`)
+        runSql(
+            `INSERT INTO tb_order (symbol, client_id, direction, price, quantity) VALUES ('${symbol}', '${event.c}', 'BUY', ${event.L}, ${event.q})`
+        );
     }
 };
 
