@@ -249,7 +249,7 @@ const marginExecutionCallback = (event) => {
     if (event.e != "executionReport") {
         return;
     }
-    console.log(event);
+    // console.log(event);
     if (event.S == "BUY" && event.X == "FILLED") {
         const msg = `buy order success, clientId=${event.c}, price=${event.L}, amount=${event.q}`;
         console.log(msg);
