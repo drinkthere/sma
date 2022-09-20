@@ -262,7 +262,7 @@ const marginExecutionCallback = (event) => {
         console.log(msg);
         teleBot.sendMessage(channelId, msg);
         runSql(
-            `INSERT INTO tb_order (symbol, client_id, direction, price, quantity) VALUES ('${symbol}', '${event.c}', 'BUY', ${event.L}, ${event.q})`
+            `INSERT INTO tb_order (symbol, client_id, direction, price, quantity) VALUES ('${symbol}', '${event.c}', 'SELL', ${event.L}, ${event.q})`
         );
     }
 };
