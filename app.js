@@ -159,7 +159,7 @@ const borrowRepay = async () => {
             }
             if (
                 quoteToken.free < quoteToken.onHand &&
-                quoteToken.borrowed < baseToken.onHand
+                quoteToken.borrowed < quoteToken.onHand
             ) {
                 console.log(
                     `Borrow ${quoteToken.name} ${quoteToken.amountPerBorrow}`
