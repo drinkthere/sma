@@ -7,6 +7,8 @@
 # libs
 node_modules/
 
+# configs
+/configs/config.json
 
 # logs
 /logs
