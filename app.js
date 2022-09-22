@@ -338,9 +338,9 @@ const calThreshold = () => {
     if (diff >= 0) {
         // k 用来减缓衰减的速度，后续可以抽到配置文件中
         sellMargin = Math.max(1, smaMargin - k * diffRatio * difficulty);
-        buyMargin = smaMargin + diffRatio * difficulty;
+        buyMargin = smaMargin + (1 / k) * diffRatio * difficulty;
     } else {
-        sellMargin = smaMargin - diffRatio * difficulty;
+        sellMargin = smaMargin - (1 / k + diffRatio * difficulty);
         buyMargin = Math.max(1, smaMargin + k * diffRatio * difficulty);
     }
 
