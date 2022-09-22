@@ -1,9 +1,10 @@
 {
     "ETHBUSD": {
         "manageMarginAccountInterval": 30000,
-        "smaLength": 200,
+        "smaLength": 300,
         "smaInterval": 1000,
         "smaMargin": 1.002,
+        "k": 0.5,
         "difficulty": 0.004,
         "orderSize": 0.1,
         "buyPauseDuration": 29000,

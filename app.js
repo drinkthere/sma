@@ -62,6 +62,7 @@ const smaLength = currConfig.smaLength;
 const smaInterval = currConfig.smaInterval;
 const smaMargin = currConfig.smaMargin;
 const difficulty = currConfig.difficulty;
+const k = currConfig.k;
 const orderSize = currConfig.orderSize;
 const buyPauseDuration = currConfig.buyPauseDuration;
 const sellPauseDuration = currConfig.sellPauseDuration;
@@ -335,12 +336,12 @@ const calThreshold = () => {
     let buyMargin = smaMargin;
     let sellMargin = smaMargin;
     if (diff >= 0) {
-        // 0.5 用来减缓衰减的速度，后续可以抽到配置文件中
-        sellMargin = Math.max(1, smaMargin - 0.5 * diffRatio * difficulty);
+        // k 用来减缓衰减的速度，后续可以抽到配置文件中
+        sellMargin = Math.max(1, smaMargin - k * diffRatio * difficulty);
         buyMargin = smaMargin + diffRatio * difficulty;
     } else {
         sellMargin = smaMargin - diffRatio * difficulty;
-        buyMargin = Math.max(1, smaMargin + 0.5 * diffRatio * difficulty);
+        buyMargin = Math.max(1, smaMargin + k * diffRatio * difficulty);
     }
 
     return { buyMargin, sellMargin };
