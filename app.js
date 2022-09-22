@@ -312,7 +312,7 @@ const trade = async () => {
             }, sellPause=${sellPause}`
         );
         sellPause = true;
-        createOrder("SELL", "MARKET", orderSize);
+        createOrder("SELL", "MARKET", orderSize, sellMargin);
         sellUnpause();
     }
 
@@ -323,7 +323,7 @@ const trade = async () => {
             }, buyPause=${buyPause}`
         );
         buyPause = true;
-        createOrder("BUY", "MARKET", orderSize);
+        createOrder("BUY", "MARKET", orderSize, buyMargin);
         buyUnpause();
     }
 };
@@ -357,7 +357,7 @@ const sellUnpause = async () => {
     sellPause = false;
 };
 
-const createOrder = async (side, type, quantity) => {
+const createOrder = async (side, type, quantity, margin) => {
     try {
         const start = timer();
         // 市价单，price=0
@@ -367,7 +367,11 @@ const createOrder = async (side, type, quantity) => {
         });
         const end = timer();
         // console.log(order)
-        console.log(`createOrder time took ${end - start} ms`);
+        console.log(
+            `create side order margin is ${margin} and time took ${
+                end - start
+            } ms, `
+        );
     } catch (e) {
         console.log(e);
     }
