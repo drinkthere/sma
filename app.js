@@ -61,12 +61,13 @@ const manageMarginAccountInterval = currConfig.manageMarginAccountInterval;
 const smaLength = currConfig.smaLength;
 const smaInterval = currConfig.smaInterval;
 const smaMargin = currConfig.smaMargin;
-const reduceMargin = currConfig.reduceMargin;
+const difficulty = currConfig.difficulty;
 const orderSize = currConfig.orderSize;
 const buyPauseDuration = currConfig.buyPauseDuration;
 const sellPauseDuration = currConfig.sellPauseDuration;
 const borrowRepaySplitMinute = currConfig.borrowRepaySplitMinute;
 const statInterval = currConfig.statInterval;
+
 let bid;
 let ask;
 let smaArr = [];
@@ -301,65 +302,48 @@ const trade = async () => {
     if (!ready || atRisk) {
         return;
     }
+    const { buyMargin, sellMargin } = calThreshold();
 
-    if (ask > smaAvg * smaMargin && !sellPause) {
+    if (ask > smaAvg * sellMargin && !sellPause) {
         console.log(
-            `===ask=${ask}, smaAvg*smaMargin=${
-                smaAvg * smaMargin
-            }, ask>smaAvg*smaMargin=${
-                ask > smaAvg * smaMargin
-            }, sellPause=${sellPause}`
-        );
-        sellPause = true;
-        createOrder("SELL", "MARKET", orderSize);
-        sellUnpause();
-    } else if (
-        ask > smaAvg * reduceMargin &&
-        !sellPause &&
-        baseToken.netAsset > baseToken.reduce
-    ) {
-        console.log(
-            `===ask=${ask}, smaAvg*reduceMargin=${
-                smaAvg * reduceMargin
-            }, ask>smaAvg*reduceMargin=${
-                ask > smaAvg * reduceMargin
-            }, netAsset>reduce=${
-                baseToken.netAsset < baseToken.reduce
+            `===ask=${ask}, threshold=${
+                smaAvg * sellMargin
             }, sellPause=${sellPause}`
         );
         sellPause = true;
         createOrder("SELL", "MARKET", orderSize);
         sellUnpause();
     }
-    if (bid < smaAvg / smaMargin && !buyPause) {
+
+    if (bid < smaAvg / buyMargin && !buyPause) {
         console.log(
-            `===bid=${bid}, smaAvg/smaMargin=${
-                smaAvg / smaMargin
-            }, bid<smaAvg/smaMargin=${
-                bid < smaAvg / smaMargin
-            }, buyPause=${buyPause}`
-        );
-        buyPause = true;
-        createOrder("BUY", "MARKET", orderSize);
-        buyUnpause();
-    } else if (
-        bid < smaAvg / reduceMargin &&
-        !buyPause &&
-        baseToken.netAsset < baseToken.reduce
-    ) {
-        console.log(
-            `===bid=${bid}, smaAvg/reduceMargin=${
-                smaAvg / smaMargin
-            }, bid<smaAvg/reduceMargin=${
-                bid < smaAvg / reduceMargin
-            }, netAsset<reduce=${
-                baseToken.netAsset > baseToken.reduce
+            `===bid=${bid}, threshold=${
+                smaAvg / buyMargin
             }, buyPause=${buyPause}`
         );
         buyPause = true;
         createOrder("BUY", "MARKET", orderSize);
         buyUnpause();
     }
+};
+
+const calThreshold = () => {
+    // 详细变化见文档：https://silot.feishu.cn/sheets/shtcnc2r6HU6J2cmyowOZXdSZlg?from=from_copylink
+    const diff = baseToken.netAsset - baseToken.onHand;
+    const diffRatio = diff / baseToken.onHand;
+
+    let buyMargin = smaMargin;
+    let sellMargin = smaMargin;
+    if (diff >= 0) {
+        // 0.5 用来减缓衰减的速度，后续可以抽到配置文件中
+        sellMargin = Math.max(1, smaMargin - 0.5 * diffRatio * difficulty);
+        buyMargin = smaMargin + diffRatio * difficulty;
+    } else {
+        sellMargin = smaMargin - diffRatio * difficulty;
+        buyMargin = Math.max(1, smaMargin + 0.5 * diffRatio * difficulty);
+    }
+
+    return { buyMargin, sellMargin };
 };
 
 const buyUnpause = async () => {

@@ -3,17 +3,16 @@
         "manageMarginAccountInterval": 30000,
         "smaLength": 200,
         "smaInterval": 1000,
-        "smaMargin": 1.004,
-        "reduceMargin": 1.002,
+        "smaMargin": 1.002,
+        "difficulty": 0.004,
         "orderSize": 0.1,
         "buyPauseDuration": 29000,
-        "sellPauseDuration": 28000,
+        "sellPauseDuration": 29000,
         "borrowRepaySplitMinute": 58,
         "statInterval": 300000,
         "baseToken": {
             "name": "ETH",
             "onHand": 1,
-            "reduce": 1.5,
             "amountPerBorrow": 0.3
         },
         "quoteToken": {
