@@ -340,7 +340,7 @@ const calThreshold = () => {
         sellMargin = Math.max(1, smaMargin - k * diffRatio * difficulty);
         buyMargin = smaMargin + (1 / k) * diffRatio * difficulty;
     } else {
-        sellMargin = smaMargin - (1 / k + diffRatio * difficulty);
+        sellMargin = smaMargin - (1 / k) * diffRatio * difficulty;
         buyMargin = Math.max(1, smaMargin + k * diffRatio * difficulty);
     }
 
