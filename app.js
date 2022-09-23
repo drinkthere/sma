@@ -335,16 +335,19 @@ const trade = async () => {
 
 const calThreshold = () => {
     // 详细变化见文档：https://silot.feishu.cn/sheets/shtcnc2r6HU6J2cmyowOZXdSZlg?from=from_copylink
-    if (baseToken.orig == 0) {
-        const diff = baseToken.netAsset - baseToken.onHand;
-        const diffRatio = diff / baseToken.onHand;
-    } else {
-        const diff = baseToken.free - baseToken.onHand;
-        const diffRatio = diff / baseToken.onHand;
-    }
-
+    let diff = 0;
+    let diffRatio = 0;
     let buyMargin = smaMargin;
     let sellMargin = smaMargin;
+
+    if (baseToken.orig == 0) {
+        diff = baseToken.netAsset - baseToken.onHand;
+        diffRatio = diff / baseToken.onHand;
+    } else {
+        diff = baseToken.free - baseToken.onHand;
+        diffRatio = diff / baseToken.onHand;
+    }
+
     if (diff >= 0) {
         // k 用来减缓衰减的速度，后续可以抽到配置文件中
         sellMargin = Math.max(1, smaMargin - k * diffRatio * difficulty);
