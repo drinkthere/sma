@@ -341,10 +341,10 @@ const calThreshold = () => {
     let sellMargin = smaMargin;
 
     if (baseToken.orig == 0) {
-        diff = baseToken.netAsset - baseToken.onHand;
+        diff = baseToken.free - baseToken.onHand;
         diffRatio = diff / baseToken.onHand;
     } else {
-        diff = baseToken.free - baseToken.onHand;
+        diff = baseToken.netAsset - baseToken.onHand;
         diffRatio = diff / baseToken.onHand;
     }
 
@@ -375,7 +375,7 @@ const createOrder = async (side, type, quantity, margin) => {
         const start = timer();
         // 市价单，price=0
         const order = binance.mgOrder(side, symbol, quantity, 0, {
-            type: "MARKET",
+            type: type,
             newClientOrderId: uuidv1(),
         });
         const end = timer();
