@@ -77,13 +77,14 @@ let atRisk = true;
 let ready = false;
 let buyPause = false;
 let sellPause = false;
+let marginLevel = 999;
 
 const init = async () => {
     // 初始化时区
     process.env.TZ = "Asia/Hong_Kong";
 
-    // 初始化数据库
-    await initDb();
+    // // 初始化数据库
+    // await initDb();
 
     // 初始化杠杆账户余额
     await getBalances();
@@ -98,6 +99,7 @@ const getBalances = async () => {
                     // 添加报警
                     reject();
                 }
+                marginLevel = resp.marginLevel;
                 resp.userAssets.map((assetInfo) => {
                     if (baseToken.name == assetInfo.asset) {
                         baseToken.free = parseFloat(assetInfo.free);
@@ -397,7 +399,7 @@ const stat = async () => {
     const quoteTokenProfit = quoteToken.netAsset - quoteToken.onHand;
     const bnbProfit = (bnb.netAsset - bnb.onHand) * bnb.bid;
     const totalProfit = baseTokenProfit + quoteTokenProfit + bnbProfit;
-    const statistic = `Total Profit=${totalProfit}, ${baseToken.name}=${baseToken.netAsset}(f:${baseToken.free}|b:${baseToken.borrowed}), ${quoteToken.name}=${quoteToken.netAsset}(f:${quoteToken.free}|b:${quoteToken.borrowed}), BNB=${bnb.netAsset}(f:${bnb.free}|i:${bnb.interest})`;
+    const statistic = `Total Profit=${totalProfit}, ${baseToken.name}=${baseToken.netAsset}(f:${baseToken.free}|b:${baseToken.borrowed}), ${quoteToken.name}=${quoteToken.netAsset}(f:${quoteToken.free}|b:${quoteToken.borrowed}), BNB=${bnb.netAsset}(f:${bnb.free}|i:${bnb.interest}), ML=${marginLevel}`;
     console.log(statistic);
     teleBot.sendMessage(channelId, statistic);
 };
@@ -405,15 +407,15 @@ const stat = async () => {
 const main = async () => {
     // @todo 增加最大出错次数，超过了停止程序
     await init();
-    // 杠杆账户管理，借款、还款、还利息
-    newInterval(marginAccountManagement, manageMarginAccountInterval);
-    // 监听成交信息
-    wsListenOrder();
-    // 监听现货价格
-    wsListenSpotBookTicker();
-    // 定时计算 SMA
-    newInterval(calculateSma, smaInterval);
-    // 定时上报盈亏
-    newInterval(stat, statInterval);
+    // // 杠杆账户管理，借款、还款、还利息
+    // newInterval(marginAccountManagement, manageMarginAccountInterval);
+    // // 监听成交信息
+    // wsListenOrder();
+    // // 监听现货价格
+    // wsListenSpotBookTicker();
+    // // 定时计算 SMA
+    // newInterval(calculateSma, smaInterval);
+    // // 定时上报盈亏
+    // newInterval(stat, statInterval);
 };
 main();
