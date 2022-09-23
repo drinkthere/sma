@@ -335,8 +335,13 @@ const trade = async () => {
 
 const calThreshold = () => {
     // 详细变化见文档：https://silot.feishu.cn/sheets/shtcnc2r6HU6J2cmyowOZXdSZlg?from=from_copylink
-    const diff = baseToken.netAsset - baseToken.onHand;
-    const diffRatio = diff / baseToken.onHand;
+    if (baseToken.orig == 0) {
+        const diff = baseToken.netAsset - baseToken.onHand;
+        const diffRatio = diff / baseToken.onHand;
+    } else {
+        const diff = baseToken.free - baseToken.onHand;
+        const diffRatio = diff / baseToken.onHand;
+    }
 
     let buyMargin = smaMargin;
     let sellMargin = smaMargin;
