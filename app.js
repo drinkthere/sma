@@ -83,8 +83,8 @@ const init = async () => {
     // 初始化时区
     process.env.TZ = "Asia/Hong_Kong";
 
-    // // 初始化数据库
-    // await initDb();
+    // 初始化数据库
+    await initDb();
 
     // 初始化杠杆账户余额
     await getBalances();
@@ -407,15 +407,15 @@ const stat = async () => {
 const main = async () => {
     // @todo 增加最大出错次数，超过了停止程序
     await init();
-    // // 杠杆账户管理，借款、还款、还利息
-    // newInterval(marginAccountManagement, manageMarginAccountInterval);
-    // // 监听成交信息
-    // wsListenOrder();
-    // // 监听现货价格
-    // wsListenSpotBookTicker();
-    // // 定时计算 SMA
-    // newInterval(calculateSma, smaInterval);
-    // // 定时上报盈亏
-    // newInterval(stat, statInterval);
+    // 杠杆账户管理，借款、还款、还利息
+    newInterval(marginAccountManagement, manageMarginAccountInterval);
+    // 监听成交信息
+    wsListenOrder();
+    // 监听现货价格
+    wsListenSpotBookTicker();
+    // 定时计算 SMA
+    newInterval(calculateSma, smaInterval);
+    // 定时上报盈亏
+    newInterval(stat, statInterval);
 };
 main();
