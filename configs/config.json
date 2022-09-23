@@ -14,15 +14,18 @@
         "baseToken": {
             "name": "ETH",
             "onHand": 1,
-            "amountPerBorrow": 0.3
+            "amountPerBorrow": 0.3,
+            "orig": 1
         },
         "quoteToken": {
             "name": "BUSD",
             "onHand": 1500,
-            "amountPerBorrow": 450
+            "amountPerBorrow": 450,
+            "orig": 1500
         },
         "bnb": {
             "onHand": 0.5,
+            "orig": 0.5,
             "repayThreshold": 0,
             "symbol": "BNBBUSD"
         }

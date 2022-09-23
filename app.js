@@ -34,6 +34,7 @@ const baseToken = {
     onHand: currConfig.baseToken.onHand,
     reduce: currConfig.baseToken.reduce,
     amountPerBorrow: currConfig.baseToken.amountPerBorrow,
+    orig: currConfig.baseToken.orig,
     free: 0,
     borrowed: 0,
     netAsset: 0,
@@ -42,6 +43,7 @@ const quoteToken = {
     name: currConfig.quoteToken.name,
     onHand: currConfig.quoteToken.onHand,
     amountPerBorrow: currConfig.quoteToken.amountPerBorrow,
+    orig: currConfig.quoteToken.orig,
     free: 0,
     borrowed: 0,
     netAsset: 0,
@@ -49,6 +51,7 @@ const quoteToken = {
 
 const bnb = {
     onHand: currConfig.bnb.onHand,
+    orig: currConfig.bnb.orig,
     free: 0,
     borrowed: 0,
     interest: 0,
@@ -395,9 +398,9 @@ const calculateSma = async () => {
 
 const stat = async () => {
     await getBalances();
-    const baseTokenProfit = (baseToken.netAsset - baseToken.onHand) * bid;
-    const quoteTokenProfit = quoteToken.netAsset - quoteToken.onHand;
-    const bnbProfit = (bnb.netAsset - bnb.onHand) * bnb.bid;
+    const baseTokenProfit = (baseToken.netAsset - baseToken.orig) * bid;
+    const quoteTokenProfit = quoteToken.netAsset - quoteToken.orig;
+    const bnbProfit = (bnb.netAsset - bnb.orig) * bnb.bid;
     const totalProfit = baseTokenProfit + quoteTokenProfit + bnbProfit;
     const statistic = `Total Profit=${totalProfit}, ${baseToken.name}=${baseToken.netAsset}(f:${baseToken.free}|b:${baseToken.borrowed}), ${quoteToken.name}=${quoteToken.netAsset}(f:${quoteToken.free}|b:${quoteToken.borrowed}), BNB=${bnb.netAsset}(f:${bnb.free}|i:${bnb.interest}), ML=${marginLevel}`;
     console.log(statistic);
